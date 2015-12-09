@@ -248,6 +248,7 @@ public:
 	char reading_status;
 	char writing_status;
 	char control_status;
+	char system_armed;
     uint64_t write_count;
 
     int system_id;
@@ -263,6 +264,9 @@ public:
 
 	void enable_offboard_control();
 	void disable_offboard_control();
+
+	void arm_system();
+	void disarm_system();
 
 	void start();
 	void stop();
@@ -288,6 +292,7 @@ private:
 	void write_thread(void);
 
 	int toggle_offboard_control( bool flag );
+	int arm(bool flag);
 	void write_setpoint();
 
 };

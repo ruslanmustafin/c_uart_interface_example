@@ -113,7 +113,7 @@ set_velocity(float vx, float vy, float vz, mavlink_set_position_target_local_ned
 	sp.vy  = vy;
 	sp.vz  = vz;
 
-	//printf("VELOCITY SETPOINT UVW = [ %.4f , %.4f , %.4f ] \n", sp.vx, sp.vy, sp.vz);
+	printf("VELOCITY SETPOINT UVW = [ %.4f , %.4f , %.4f ] \n", sp.vx, sp.vy, sp.vz);
 
 }
 
@@ -434,15 +434,15 @@ write_setpoint()
 	// --------------------------------------------------------------------------
 	//   WRITE
 	// --------------------------------------------------------------------------
-
+	// printf("Sending message \n");
 	// do the write
 	int len = write_message(message);
 
 	// check the write
 	if ( not len > 0 )
 		fprintf(stderr,"WARNING: could not send POSITION_TARGET_LOCAL_NED \n");
-	//	else
-	//		printf("%lu POSITION_TARGET  = [ %f , %f , %f ] \n", write_count, position_target.x, position_target.y, position_target.z);
+	else
+		printf("%lu POSITION_TARGET  = [ %f , %f , %f ] \n", write_count, sp.vx, sp.vy, sp.vz);
 
 	return;
 }
@@ -482,7 +482,6 @@ enable_offboard_control()
 
 }
 
-
 // ------------------------------------------------------------------------------
 //   Stop Off-Board Mode
 // ------------------------------------------------------------------------------
@@ -518,7 +517,6 @@ disable_offboard_control()
 
 }
 
-
 // ------------------------------------------------------------------------------
 //   Toggle Off-Board Mode
 // ------------------------------------------------------------------------------
@@ -532,19 +530,79 @@ toggle_offboard_control( bool flag )
 	com.target_component = autopilot_id;
 	com.command          = MAV_CMD_NAV_GUIDED_ENABLE;
 	com.confirmation     = true;
+
 	com.param1           = (float) flag; // flag >0.5 => start, <0.5 => stop
 
 	// Encode
 	mavlink_message_t message;
 	mavlink_msg_command_long_encode(system_id, companion_id, &message, &com);
-
 	// Send the message
 	int len = serial_port->write_message(message);
 
 	// Done!
+	printf("Offboard mode activated!\n");
 	return len;
 }
 
+
+void Autopilot_Interface::arm_system()
+{
+	if (system_armed == false) {
+		int success = arm(true);
+
+		// Check the command was written
+		if ( success )
+			system_armed = true;
+		else
+			fprintf(stderr,"Error: the system was not armed\n");
+
+		printf("\n");
+	} 
+}
+
+void Autopilot_Interface::disarm_system()
+{
+	if (system_armed == true) {
+		int success = arm(false);
+
+		// Check the command was written
+		if ( success )
+			system_armed = false;
+		else
+			fprintf(stderr,"Error: the system was not disarmed\n");
+
+		printf("\n");
+	}
+}
+
+int Autopilot_Interface::arm(bool flag) 
+{
+	// Prepare command for arming system
+	mavlink_command_long_t com;
+	com.target_system    = system_id;
+	com.target_component = autopilot_id;
+	com.command          = MAV_CMD_COMPONENT_ARM_DISARM;
+	com.confirmation     = true;
+
+	if (flag == true) 
+	{
+		com.param1       = 1; // arm
+	} else 
+	{
+		com.param1       = 0; // disarm
+	}
+	
+
+	// Encode
+	mavlink_message_t message;
+	mavlink_msg_command_long_encode(system_id, companion_id, &message, &com);
+	// Send the message
+	int len = serial_port->write_message(message);
+
+	// Done!
+	printf("System armed!\n");
+	return len;
+}
 
 // ------------------------------------------------------------------------------
 //   STARTUP

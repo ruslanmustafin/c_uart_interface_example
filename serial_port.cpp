@@ -92,7 +92,7 @@ initialize_defaults()
 	fd     = -1;
 	status = SERIAL_PORT_CLOSED;
 
-	uart_name = (char*)"/dev/ttyUSB0";
+	uart_name = (char*)"/dev/tty.usbmodem1";
 	baudrate  = 57600;
 
 	// Start mutex
@@ -219,6 +219,8 @@ open_serial()
 	//   OPEN PORT
 	// --------------------------------------------------------------------------
 	printf("OPEN PORT\n");
+	printf(uart_name);
+	printf("\n");
 
 	fd = _open_port(uart_name);
 
@@ -485,11 +487,11 @@ _setup_port(int baud, int data_bits, int stop_bits, bool parity, bool hardware_c
 	}
 
 	// Finally, apply the configuration
-	if(tcsetattr(fd, TCSAFLUSH, &config) < 0)
-	{
-		fprintf(stderr, "\nERROR: could not set configuration of fd %d\n", fd);
-		return false;
-	}
+	// if(tcsetattr(fd, TCSAFLUSH, &config) < 0)
+	// {
+	// 	fprintf(stderr, "\nERROR: could not set configuration of fd %d\n", fd);
+	// 	return false;
+	// }
 
 	// Done!
 	return true;
@@ -507,10 +509,12 @@ _read_port(uint8_t &cp)
 
 	// Lock
 	pthread_mutex_lock(&lock);
+	// printf("Locked read\n");
 
 	int result = read(fd, &cp, 1);
 
 	// Unlock
+	// printf("Unlocked read\n");
 	pthread_mutex_unlock(&lock);
 
 	return result;
@@ -524,19 +528,21 @@ void
 Serial_Port::
 _write_port(char *buf, unsigned &len)
 {
-
+	// printf("1\n");
 	// Lock
 	pthread_mutex_lock(&lock);
-
+	// printf("Locked write\n");
+	// printf("2\n");
 	// Write packet via serial link
 	write(fd, buf, len);
-
+	// printf("3\n");
 	// Wait until all data has been written
 	tcdrain(fd);
-
+	// printf("4\n");
 	// Unlock
+	// printf("Unlocked write\n");
 	pthread_mutex_unlock(&lock);
-
+	// printf("Done\n");
 	return;
 }
 
